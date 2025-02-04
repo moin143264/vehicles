@@ -529,6 +529,16 @@ app.post('/checkout/:bookingId', async (req, res) => {
     res.status(500).json({ message: 'Error checking out vehicle' });
   }
 });
+// Endpoint to fetch parking spaces
+app.get('/parking-spaces', async (req, res) => {
+  try {
+    const spaces = await ParkingSpace.find();
+    res.json(spaces);
+  } catch (error) {
+    console.error('Error fetching parking spaces:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
