@@ -334,6 +334,12 @@ app.get('/ap/payments', async (req, res) => {
       });
   }
 });
+app.get("/", (req, res) => {
+  res.status(200).send({
+    success: true,
+    msg: "running",
+  });
+});
 cron.schedule('* * * * *', async () => {
   const now = moment().utc(); // Current time in UTC
   const startOfDay = moment().startOf('day').utc(); // Start of today in UTC
