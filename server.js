@@ -340,7 +340,7 @@ app.get("/ap/payments", async (req, res) => {
     });
   }
 });
-cron.schedule("* * * * *", async () => {
+cron.schedule('* * * * *', async () => {
   const now = moment().utc(); // Current time in UTC
   const startOfDay = moment().startOf("day").utc(); // Start of today in UTC
   const endOfDay = moment().endOf("day").utc(); // End of today in UTC
@@ -552,6 +552,16 @@ app.post("/checkout/:bookingId", async (req, res) => {
   } catch (error) {
     console.error("Error checking out vehicle:", error);
     res.status(500).json({ message: "Error checking out vehicle" });
+  }
+});
+// Endpoint to fetch parking spaces
+app.get('/parking-spaces', async (req, res) => {
+  try {
+    const spaces = await ParkingSpace.find();
+    res.json(spaces);
+  } catch (error) {
+    console.error('Error fetching parking spaces:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 // Start server
