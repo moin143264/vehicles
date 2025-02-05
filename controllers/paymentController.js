@@ -1,8 +1,8 @@
-const Payment = require('../models/Payment');
-const ParkingSpace = require('../models/ParkingSpace');
-const User = require('../models/User');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { createError } = require('../utils/error');
+const Payment = require("../models/Payment");
+const ParkingSpace = require("../models/ParkingSpace");
+const User = require("../models/User");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { createError } = require("../utils/error");
 
 const paymentController = {
   createPaymentIntent: async (req, res, next) => {
@@ -10,25 +10,25 @@ const paymentController = {
       const { totalAmount, parkingSpace } = req.body;
 
       if (!parkingSpace || !parkingSpace.id) {
-        return next(createError(404, 'Parking space not found'));
+        return next(createError(404, "Parking space not found"));
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(totalAmount * 100), // Convert to cents
-        currency: 'inr',
+        currency: "inr",
         metadata: {
           parkingSpaceId: parkingSpace.id,
-          userId: req.user.id
-        }
+          userId: req.user.id,
+        },
       });
 
       res.status(200).json({
         clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
+        paymentIntentId: paymentIntent.id,
       });
     } catch (error) {
-      console.error('Error creating payment intent:', error);
-      next(createError(500, 'Failed to create payment intent'));
+      console.error("Error creating payment intent:", error);
+      next(createError(500, "Failed to create payment intent"));
     }
   },
 
@@ -50,9 +50,11 @@ const paymentController = {
       } = req.body;
 
       // Verify payment with Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      if (paymentIntent.status !== 'succeeded') {
-        return next(createError(400, 'Payment not successful'));
+      const paymentIntent = await stripe.paymentIntents.retrieve(
+        paymentIntentId
+      );
+      if (paymentIntent.status !== "succeeded") {
+        return next(createError(400, "Payment not successful"));
       }
 
       // Create payment record
@@ -67,15 +69,15 @@ const paymentController = {
           id: parkingSpace.id,
           name: parkingSpace.name,
           address: parkingSpace.address,
-          type: parkingSpace.type
+          type: parkingSpace.type,
         },
-        bookingDate:bookingDate,
+        bookingDate: bookingDate,
         startTime,
         duration,
         totalAmount,
         endTime,
         paymentIntentId,
-        paymentStatus: 'completed'
+        paymentStatus: "completed",
       });
 
       await payment.save();
@@ -91,16 +93,16 @@ const paymentController = {
             startTime,
             endTime,
             bookingDate,
-            duration
-          }
-        }
+            duration,
+          },
+        },
       });
 
       // Update user's bookings
       await User.findByIdAndUpdate(req.user.id, {
         $push: {
-          bookings: payment._id
-        }
+          bookings: payment._id,
+        },
       });
 
       res.status(200).json({
@@ -115,23 +117,24 @@ const paymentController = {
           numberPlate: payment.numberPlate,
           vehicleType: payment.vehicleType,
           paymentStatus: payment.paymentStatus,
-          endTime:payment.endTime,
-        }
+          endTime: payment.endTime,
+        },
       });
     } catch (error) {
-      console.error('Error confirming payment:', error);
-      next(createError(500, 'Failed to confirm payment'));
+      console.error("Error confirming payment:", error);
+      next(createError(500, "Failed to confirm payment"));
     }
   },
 
   getPaymentHistory: async (req, res, next) => {
     try {
-      const payments = await Payment.find({ userId: req.user.id })
-        .sort({ createdAt: -1 });
+      const payments = await Payment.find({ userId: req.user.id }).sort({
+        createdAt: -1,
+      });
 
       res.status(200).json(payments);
     } catch (error) {
-      next(createError(500, 'Failed to fetch payment history'));
+      next(createError(500, "Failed to fetch payment history"));
     }
   },
 
@@ -139,18 +142,18 @@ const paymentController = {
     try {
       const payment = await Payment.findOne({
         _id: req.params.paymentId,
-        userId: req.user.id
+        userId: req.user.id,
       });
 
       if (!payment) {
-        return next(createError(404, 'Payment not found'));
+        return next(createError(404, "Payment not found"));
       }
 
       res.status(200).json(payment);
     } catch (error) {
-      next(createError(500, 'Failed to fetch payment details'));
+      next(createError(500, "Failed to fetch payment details"));
     }
-  }
+  },
 };
 
 module.exports = paymentController;
@@ -160,10 +163,12 @@ const getAllPayments = async (req, res) => {
     const { userId } = req.query;
 
     if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return res.status(400).json({ message: "User ID is required" });
     }
 
-    const payments = await Payment.find({ userId: userId }).sort({ createdAt: -1 });
+    const payments = await Payment.find({ userId: userId }).sort({
+      createdAt: -1,
+    });
 
     const formattedPayments = payments.map((payment) => {
       return {
@@ -177,10 +182,10 @@ const getAllPayments = async (req, res) => {
           id: payment.parkingSpace.id,
           name: payment.parkingSpace.name,
           address: payment.parkingSpace.address,
-          type: payment.parkingSpace.type
+          type: payment.parkingSpace.type,
         },
         bookingDate: payment.bookingDate,
-        startTime: payment.startTime,
+        startTime: payment.startTime.toISOString().slice(11, 16), // Extracting HH:mm for startTime
         duration: payment.duration,
         totalAmount: payment.totalAmount,
         paymentIntentId: payment.paymentIntentId,
@@ -188,20 +193,22 @@ const getAllPayments = async (req, res) => {
         paymentMethod: payment.paymentMethod,
         bookingStatus: payment.bookingStatus,
         bookingId: payment.bookingId,
-        endTime:payment.endTime,
+        endTime: payment.endTime,
 
         createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt
+        updatedAt: payment.updatedAt,
       };
     });
 
     res.status(200).json({ payments: formattedPayments });
   } catch (error) {
-    console.error('Error fetching payments:', error.message);
-    res.status(500).json({ message: 'Error fetching payments', error: error.message });
+    console.error("Error fetching payments:", error.message);
+    res
+      .status(500)
+      .json({ message: "Error fetching payments", error: error.message });
   }
 };
 
 module.exports = {
-  getAllPayments
+  getAllPayments,
 };
