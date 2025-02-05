@@ -209,6 +209,12 @@ app.get("/parking", async (req, res) => {
     });
   }
 });
+app.get("/",(req,res)=>{
+  res.status(200).send({
+    "success":true,
+    "msg":"running"
+  })
+})
 // Add this after your MongoDB connection
 mongoose.connection.once("open", async () => {
   try {
