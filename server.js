@@ -523,7 +523,18 @@ app.post("/create-payment-intent", async (req, res) => {
     res.status(500).json({ message: "Error creating payment intent" });
   }
 });
-
+app.get("/parking-spaces", async (req, res) => {
+  try {
+    const parkingSpaces = await ParkingSpace.find(); // Fetch parking spaces from the database
+    res.json(parkingSpaces); // Send the fetched parking spaces as a response
+  } catch (error) {
+    console.error("Error fetching parking spaces:", error);
+    res.status(500).json({
+      message: "Error fetching parking spaces. Please try again later.",
+      error: error.message,
+    });
+  }
+});
 // Handle vehicle checkout
 app.post("/checkout/:bookingId", async (req, res) => {
   try {
