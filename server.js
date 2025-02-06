@@ -271,6 +271,12 @@ app.get("/payments", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+app.get("/",(req,res)=>{
+  res.status(200).send({
+    "success":true,
+    "msg":"running"
+  })
+})
 // Cron job for alerting based on booking times
 app.get("/ap/payments", async (req, res) => {
   try {
