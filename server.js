@@ -523,7 +523,7 @@ app.get("/active-bookings/:userId", async (req, res) => {
 const formattedBookings = activeBookings.map((booking) => ({
   ...booking.toObject(), // Convert mongoose document to plain object
   startTime: booking.startTime ? booking.startTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
-  endTime: booking.endTime ? booking.endTime.toISOString().slice(11, 16) : null : null, // Extracting HH:mm
+ endTime: booking.endTime ? booking.endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
 }));
 
     res.json(formattedBookings);
