@@ -313,39 +313,14 @@ app.get("/ap/payments", async (req, res) => {
     // Map to format startTime and endTime
 const formattedPayments = payments.map((payment) => {
   console.log(`Payment startTime type: ${typeof payment.startTime}, value: ${payment.startTime}`); // Log type and value
-  console.log(`Payment endTime type: ${typeof payment.endTime}, value: ${payment.endTime}`); // Log type and value
 
   // Ensure startTime is a Date object
-  let startTime;
-  if (typeof payment.startTime === 'string') {
-    startTime = new Date(`1970-01-01T${payment.startTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
-  }
-
-  // Check if startTime is valid
-  if (isNaN(startTime.getTime())) {
-    console.error(`Invalid startTime value: ${payment.startTime}`);
-    startTime = new Date(); // Fallback to current time or handle as needed
-  }
-
-  // Ensure endTime is a Date object
-  let endTime;
-  if (typeof payment.endTime === 'string') {
-    endTime = new Date(`1970-01-01T${payment.endTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
-  }
-
-  // Check if endTime is valid
-  if (isNaN(endTime.getTime())) {
-    console.error(`Invalid endTime value: ${payment.endTime}`);
-    endTime = null; // Handle as needed
-  }
+  const startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
+  const endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
 
   return {
     ...payment,
-    startTime: startTime.toISOString().slice(11, 16), // Extracting HH:mm
+    startTime: startTime ? startTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
     endTime: endTime ? endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
   };
 });
