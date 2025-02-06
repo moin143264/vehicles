@@ -33,7 +33,7 @@ mongoose
   .catch((error) => console.error("MongoDB connection error:", error));
 
 // Routes
-p.use("/users", userRoutes);
+app.use("/users", userRoutes);
 app.use("/api", userRoutes);
 app.use("/api/parking", parkingRoutes);
 app.use("/api/payments", paymentRoutes);
