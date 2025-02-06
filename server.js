@@ -134,13 +134,13 @@ app.get("/parking", async (req, res) => {
 
     const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
       // Find current active bookings for this specific parking space
-      const spaceBookings = bookings.filter((booking) => {
-        const isCurrentBooking =
-          booking.parkingSpace.id === parkingSpace._id.toString() &&
-          booking.startTime <= currentDateTime &&
-          booking.endTime > currentDateTime; // Ensure endTime is considered
-        return isCurrentBooking;
-      });
+const spaceBookings = bookings.filter((booking) => {
+  const isCurrentBooking =
+    booking.parkingSpace.id === parkingSpace._id.toString() &&
+    booking.startTime <= currentDateTime &&
+    booking.endTime > currentDateTime; // Ensure endTime is considered
+  return isCurrentBooking;
+});
 
       console.log(
         `Active bookings for space ${parkingSpace._id}:`,
