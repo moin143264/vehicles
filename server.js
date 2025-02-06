@@ -149,15 +149,13 @@ app.get("/parking", async (req, res) => {
 
       const updatedVehicleSlots = parkingSpace.vehicleSlots.map((slot) => {
         // Count only currently active bookings for this vehicle type
-        const bookedSlotsCount = spaceBookings.filter(
-          (booking) =>
-            booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase()
-        ).length;
+const bookedSlotsCount = spaceBookings.filter(
+  (booking) => booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase()
+).length;
 
-        console.log(
-          `Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`
-        ); // Debug log
-
+console.log(
+  `Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}, Total Slots: ${slot.totalSlots}`
+);
         // Get upcoming bookings for this slot type
         const upcomingBookings = bookings.filter(
           (booking) =>
@@ -242,7 +240,8 @@ app.get("/payments", async (req, res) => {
     const { date } = req.query;
 
     const allPayments = await Payment.find();
-
+    console.log(`Fetched ${allPayments.length} payments`); // Log number of payments
+    console.log(allPayments); // Log the payments data
     const filteredPayments = allPayments.filter((payment) => {
       try {
         // Ensure bookingDate is a Date object
