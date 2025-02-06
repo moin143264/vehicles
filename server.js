@@ -310,7 +310,7 @@ app.get("/ap/payments", async (req, res) => {
       startTime: payment.startTime.toISOString().slice(11, 16), // Extracting HH:mm
       endTime: payment.endTime.toISOString().slice(11, 16), // Extracting HH:mm
     }));
-
+console.log("All retrieved payments:", JSON.stringify(formattedPayments, null, 2));
     console.log(`Successfully retrieved ${formattedPayments.length} payments`);
 
     // Log a sample of the data (first payment if exists)
