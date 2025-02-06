@@ -236,6 +236,12 @@ mongoose.connection.once("open", async () => {
   }
 });
 //admin//paymentmanage
+// Define a utility function to create a Date object from bookingDate and time
+function createDateFromTime(bookingDate, time) {
+  return new Date(`${bookingDate.toISOString().split("T")[0]}T${time}`);
+}
+
+// In your payments route
 app.get("/payments", async (req, res) => {
   try {
     const currentDate = new Date();
@@ -245,13 +251,7 @@ app.get("/payments", async (req, res) => {
 
     const filteredPayments = allPayments.filter((payment) => {
       try {
-        // Ensure bookingDate is a Date object
-        const bookingDate =
-          payment.bookingDate instanceof Date
-            ? payment.bookingDate
-            : new Date(payment.bookingDate);
-
-        // Compare dates
+        const bookingDate = new Date(payment.bookingDate); // Ensure bookingDate is a Date object
         const filterDate = date ? new Date(date) : currentDate;
 
         return (
@@ -265,12 +265,78 @@ app.get("/payments", async (req, res) => {
       }
     });
 
-    res.json(filteredPayments);
+    const formattedPayments = filteredPayments.map((payment) => {
+      const bookingDate = new Date(payment.bookingDate); // Ensure bookingDate is a Date object
+      const startTime = createDateFromTime(bookingDate, payment.startTime);
+      const endTime = payment.endTime
+        ? createDateFromTime(bookingDate, payment.endTime)
+        : null;
+
+      return {
+        ...payment,
+        startTime: startTime.toISOString().slice(11, 16), // Extracting HH:mm
+        endTime: endTime ? endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
+      };
+    });
+
+    res.json(formattedPayments);
   } catch (err) {
     console.error("Error fetching payments:", err);
     res.status(500).send("Server Error");
   }
 });
+
+// Update other routes where date processing occurs similarly
+app.get("/active-bookings", async (req, res) => {
+  try {
+    const currentDate = new Date().toISOString().split("T")[0];
+
+    const activeBookings = await Payment.find({
+      bookingDate: currentDate,
+      bookingStatus: "confirmed",
+      parkingStatus: "parked",
+      paymentStatus: "completed",
+    });
+
+    res.json(activeBookings);
+  } catch (error) {
+    console.error("Error fetching active bookings:", error);
+    res.status(500).json({ message: "Error fetching active bookings" });
+  }
+});
+
+// Handle vehicle checkout
+app.post("/checkout/:bookingId", async (req, res) => {
+  try {
+    const { overtimeCharges, paymentIntentId } = req.body;
+    const booking = await Payment.findById(req.params.bookingId);
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    booking.parkingStatus = "unparked";
+
+    if (overtimeCharges > 0) {
+      booking.totalAmount += overtimeCharges;
+      if (paymentIntentId) {
+        booking.paymentIntentId = paymentIntentId;
+      }
+    }
+
+    await booking.save();
+
+    res.json({
+      message: "Vehicle checked out successfully",
+      booking,
+    });
+  } catch (error) {
+    console.error("Error checking out vehicle:", error);
+    res.status(500).json({ message: "Error checking out vehicle" });
+  }
+});
+
+// Other routes that involve date handling should follow the same pattern
 // Cron job for alerting based on booking times
 app.get("/ap/payments", async (req, res) => {
   try {
@@ -305,44 +371,11 @@ app.get("/ap/payments", async (req, res) => {
       .lean();
 
     // Map to format startTime and endTime
-const formattedPayments = payments.map((payment) => {
-  console.log(`Payment startTime type: ${typeof payment.startTime}, value: ${payment.startTime}`); // Log type and value
-  console.log(`Payment endTime type: ${typeof payment.endTime}, value: ${payment.endTime}`); // Log type and value
-
-  // Ensure startTime is a Date object
-  let startTime;
-  if (typeof payment.startTime === 'string') {
-    startTime = new Date(`1970-01-01T${payment.startTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
-  }
-
-  // Check if startTime is valid
-  if (isNaN(startTime.getTime())) {
-    console.error(`Invalid startTime value: ${payment.startTime}`);
-    startTime = new Date(); // Fallback to current time or handle as needed
-  }
-
-  // Ensure endTime is a Date object
-  let endTime;
-  if (typeof payment.endTime === 'string') {
-    endTime = new Date(`1970-01-01T${payment.endTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
-  }
-
-  // Check if endTime is valid
-  if (isNaN(endTime.getTime())) {
-    console.error(`Invalid endTime value: ${payment.endTime}`);
-    endTime = null; // Handle as needed
-  }
-
-  return {
-    ...payment,
-    startTime: startTime.toISOString().slice(11, 16), // Extracting HH:mm
-    endTime: endTime ? endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
-  };
-});
+    const formattedPayments = payments.map((payment) => ({
+      ...payment,
+      startTime: payment.startTime.toISOString().slice(11, 16), // Extracting HH:mm
+      endTime: payment.endTime.toISOString().slice(11, 16), // Extracting HH:mm
+    }));
 
     console.log(`Successfully retrieved ${formattedPayments.length} payments`);
 
@@ -443,52 +476,9 @@ cron.schedule("* * * * *", async () => {
 });
 //manageparking & panelty
 // Get active bookings
-app.get("/active-bookings", async (req, res) => {
-  try {
-    const currentDate = new Date().toISOString().split("T")[0];
-
-    const activeBookings = await Payment.find({
-      bookingDate: currentDate,
-      bookingStatus: "confirmed",
-      parkingStatus: "parked",
-      paymentStatus: "completed",
-    });
-
-    res.json(activeBookings);
-  } catch (error) {
-    console.error("Error fetching active bookings:", error);
-    res.status(500).json({ message: "Error fetching active bookings" });
-  }
-});
 
 // Handle vehicle checkout
-app.post("/checkout/:bookingId", async (req, res) => {
-  try {
-    const { overtimeCharges } = req.body;
-    const booking = await Payment.findById(req.params.bookingId);
 
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
-    }
-
-    booking.parkingStatus = "unparked";
-
-    // If there are overtime charges, update the total amount
-    if (overtimeCharges > 0) {
-      booking.totalAmount += overtimeCharges;
-    }
-
-    await booking.save();
-
-    res.json({
-      message: "Vehicle checked out successfully",
-      booking,
-    });
-  } catch (error) {
-    console.error("Error checking out vehicle:", error);
-    res.status(500).json({ message: "Error checking out vehicle" });
-  }
-});
 //panelty
 
 // Get active bookings for a specific user
@@ -515,11 +505,14 @@ app.get("/active-bookings/:userId", async (req, res) => {
     }).sort({ createdAt: -1 });
 
     // Format the response to include startTime and endTime in HH:mm format
-  const formattedBookings = activeBookings.map((booking) => ({
-  ...booking.toObject(), // Convert mongoose document to plain object
-  startTime: booking.startTime ? booking.startTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
-  endTime: booking.endTime ? booking.endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
-}));
+    const formattedBookings = activeBookings.map((booking) => ({
+      ...booking.toObject(), // Convert mongoose document to plain object
+      startTime: booking.startTime.toISOString().slice(11, 16), // Extracting HH:mm
+      endTime: booking.endTime
+        ? booking.endTime.toISOString().slice(11, 16)
+        : null, // Extracting HH:mm
+    }));
+
     res.json(formattedBookings);
   } catch (error) {
     console.error("Error fetching active bookings:", {
