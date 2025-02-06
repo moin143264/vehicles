@@ -311,11 +311,19 @@ app.get("/ap/payments", async (req, res) => {
       .lean();
 
     // Map to format startTime and endTime
-    const formattedPayments = payments.map((payment) => ({
-      ...payment,
-      startTime: payment.startTime.toISOString().slice(11, 16), // Extracting HH:mm
-      endTime: payment.endTime.toISOString().slice(11, 16), // Extracting HH:mm
-    }));
+  const formattedPayments = payments.map((payment) => {
+  console.log(`Payment startTime type: ${typeof payment.startTime}, value: ${payment.startTime}`); // Log type and value
+
+  // Ensure startTime is a Date object
+  const startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
+  const endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
+
+  return {
+    ...payment,
+    startTime: startTime.toISOString().slice(11, 16), // Extracting HH:mm
+    endTime: endTime ? endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
+  };
+});
 
     console.log(`Successfully retrieved ${formattedPayments.length} payments`);
 
