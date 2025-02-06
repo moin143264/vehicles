@@ -311,11 +311,17 @@ app.get("/ap/payments", async (req, res) => {
       .lean();
 
     // Map to format startTime and endTime
-  const formattedPayments = payments.map((payment) => {
+const formattedPayments = payments.map((payment) => {
   console.log(`Payment startTime type: ${typeof payment.startTime}, value: ${payment.startTime}`); // Log type and value
 
   // Ensure startTime is a Date object
-  const startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
+  let startTime;
+  if (typeof payment.startTime === 'string') {
+    startTime = new Date(`1970-01-01T${payment.startTime}:00Z`); // Assume it's in HH:mm format
+  } else {
+    startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
+  }
+
   const endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
 
   return {
