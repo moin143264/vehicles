@@ -335,8 +335,7 @@ app.get("/ap/payments", async (req, res) => {
       message: "Error fetching payments",
       error: error.message,
       errorType: error.name,
-      errorStack:
-        process.env.NODE_ENV === "development" ? error.stack : undefined,
+
     });
   }
 });
