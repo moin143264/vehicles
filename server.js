@@ -322,6 +322,12 @@ const formattedPayments = payments.map((payment) => {
     startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
   }
 
+  // Check if startTime is valid
+  if (isNaN(startTime.getTime())) {
+    console.error(`Invalid startTime value: ${payment.startTime}`);
+    startTime = new Date(); // Fallback to current time or handle as needed
+  }
+
   const endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
 
   return {
