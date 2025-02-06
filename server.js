@@ -138,7 +138,7 @@ const spaceBookings = bookings.filter((booking) => {
   const isCurrentBooking =
     booking.parkingSpace.id === parkingSpace._id.toString() &&
     booking.startTime <= currentDateTime &&
-    booking.endTime > currentDateTime; // Ensure endTime is considered
+    booking.endTime > currentDateTime;
   return isCurrentBooking;
 });
 
@@ -146,7 +146,9 @@ const spaceBookings = bookings.filter((booking) => {
         `Active bookings for space ${parkingSpace._id}:`,
         spaceBookings
       ); // Debug log
-
+bookings.forEach(booking => {
+  console.log(`Booking ID: ${booking.bookingId}, Parking Space ID: ${booking.parkingSpace.id}, Current Time: ${currentDateTime}`);
+});
       const updatedVehicleSlots = parkingSpace.vehicleSlots.map((slot) => {
         // Count only currently active bookings for this vehicle type
 const bookedSlotsCount = spaceBookings.filter(
