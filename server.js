@@ -139,13 +139,12 @@ const spaceBookings = bookings.filter((booking) => {
     booking.parkingSpace.id === parkingSpace._id.toString() &&
     booking.startTime <= currentDateTime &&
     booking.endTime > currentDateTime;
+
+  console.log(`Checking booking: ${booking.bookingId}, Is current: ${isCurrentBooking}`);
   return isCurrentBooking;
 });
 
-      console.log(
-        `Active bookings for space ${parkingSpace._id}:`,
-        spaceBookings
-      ); // Debug log
+console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings);
 bookings.forEach(booking => {
   console.log(`Booking ID: ${booking.bookingId}, Parking Space ID: ${booking.parkingSpace.id}, Current Time: ${currentDateTime}`);
 });
