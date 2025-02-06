@@ -271,12 +271,6 @@ app.get("/payments", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-app.get("/",(req,res)=>{
-  res.status(200).send({
-    "success":true,
-    "msg":"running"
-  })
-})
 // Cron job for alerting based on booking times
 app.get("/ap/payments", async (req, res) => {
   try {
@@ -313,35 +307,10 @@ app.get("/ap/payments", async (req, res) => {
     // Map to format startTime and endTime
 const formattedPayments = payments.map((payment) => {
   console.log(`Payment startTime type: ${typeof payment.startTime}, value: ${payment.startTime}`); // Log type and value
-  console.log(`Payment endTime type: ${typeof payment.endTime}, value: ${payment.endTime}`); // Log type and value
 
   // Ensure startTime is a Date object
-  let startTime;
-  if (typeof payment.startTime === 'string') {
-    startTime = new Date(`1970-01-01T${payment.startTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
-  }
-
-  // Check if startTime is valid
-  if (isNaN(startTime.getTime())) {
-    console.error(`Invalid startTime value: ${payment.startTime}`);
-    startTime = new Date(); // Fallback to current time or handle as needed
-  }
-
-  // Ensure endTime is a Date object
-  let endTime;
-  if (typeof payment.endTime === 'string') {
-    endTime = new Date(`1970-01-01T${payment.endTime}:00Z`); // Assume it's in HH:mm format
-  } else {
-    endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
-  }
-
-  // Check if endTime is valid
-  if (isNaN(endTime.getTime())) {
-    console.error(`Invalid endTime value: ${payment.endTime}`);
-    endTime = null; // Handle as needed
-  }
+  const startTime = payment.startTime instanceof Date ? payment.startTime : new Date(payment.startTime);
+  const endTime = payment.endTime instanceof Date ? payment.endTime : new Date(payment.endTime);
 
   return {
     ...payment,
@@ -349,6 +318,7 @@ const formattedPayments = payments.map((payment) => {
     endTime: endTime ? endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
   };
 });
+
     console.log(`Successfully retrieved ${formattedPayments.length} payments`);
 
     // Log a sample of the data (first payment if exists)
@@ -520,11 +490,13 @@ app.get("/active-bookings/:userId", async (req, res) => {
     }).sort({ createdAt: -1 });
 
     // Format the response to include startTime and endTime in HH:mm format
-const formattedBookings = activeBookings.map((booking) => ({
-  ...booking.toObject(), // Convert mongoose document to plain object
-  startTime: booking.startTime ? booking.startTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
- endTime: booking.endTime ? booking.endTime.toISOString().slice(11, 16) : null, // Extracting HH:mm
-}));
+    const formattedBookings = activeBookings.map((booking) => ({
+      ...booking.toObject(), // Convert mongoose document to plain object
+      startTime: booking.startTime.toISOString().slice(11, 16), // Extracting HH:mm
+      endTime: booking.endTime
+        ? booking.endTime.toISOString().slice(11, 16)
+        : null, // Extracting HH:mm
+    }));
 
     res.json(formattedBookings);
   } catch (error) {
