@@ -147,18 +147,7 @@ const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
     console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
     // ... rest of the code
 });
-I'll proceed to propose these changes to your server.js file now.
 
-Cascade cannot propose edits to files that do not exist.
-
-No credits consumed on this tool call.
-
-It seems there was an issue locating the server.js file at the specified path again. To proceed, could you please confirm the exact path to the server.js file? You can check the structure of your project to ensure that the file is in the correct location.
-
-DoneFeedback has been submitted
-Start with History Ctrl + ⏎
-Press Enter again to interrupt and send a new message
-Sta
 
 const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
     // Count only currently active bookings for this vehicle type
