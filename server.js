@@ -536,6 +536,18 @@ app.post('/checkout/:bookingId', async (req, res) => {
     res.status(500).json({ message: 'Error checking out vehicle' });
   }
 });
+app.get("/parking-spaces", async (req, res) => {
+  try {
+    const parkingSpaces = await ParkingSpace.find(); // Fetch parking spaces from the database
+    res.json(parkingSpaces); // Send the fetched parking spaces as a response
+  } catch (error) {
+    console.error("Error fetching parking spaces:", error);
+    res.status(500).json({
+      message: "Error fetching parking spaces. Please try again later.",
+      error: error.message,
+    });
+  }
+});
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
