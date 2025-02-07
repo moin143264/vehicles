@@ -88,7 +88,7 @@ app.get('/parking', async (req, res) => {
     // Format the query date to match booking date format (YYYY-MM-DD)
     const queryDate = new Date(date).toISOString().split('T')[0];
     
-    // Get current time in HH:mm format
+    // Get current time in HH:mm format (ensure it's in the correct timezone)
     const currentTime = new Date().toLocaleTimeString('en-US', { 
       hour12: false, 
       hour: '2-digit', 
@@ -120,39 +120,38 @@ app.get('/parking', async (req, res) => {
       console.log(`Within 10km range: ${distance <= 10 ? 'YES' : 'NO'}`);
     });
 
-console.log('Fetched bookings:', bookings); // Debug log
+    console.log('Fetched bookings:', bookings); // Debug log
 
-const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
-    const distance = getDistance(
+    const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
+      const distance = getDistance(
         parseFloat(latitude),
         parseFloat(longitude),
         parkingSpace.latitude,
         parkingSpace.longitude
-    );
-    return distance <= 10;
-});
+      );
+      return distance <= 10;
+    });
 
-// Log the nearby parking spaces for debugging
-console.log('Nearby parking spaces:', nearbyParkingSpaces); // Debug log
+    // Log the nearby parking spaces for debugging
+    console.log('Nearby parking spaces:', nearbyParkingSpaces); // Debug log
 
-const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
-    // Find current active bookings for this specific parking space
-// Log current time for debugging
-console.log('Current Time:', currentTime); // Debug log
+    const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
+      // Log current time for debugging
+      console.log('Current Time:', currentTime); // Debug log
 
-const spaceBookings = bookings.filter(booking => {
-    console.log(`Checking booking for parking space ${parkingSpace._id}:`);
-    console.log(`Booking Start Time: ${booking.startTime}, End Time: ${booking.endTime}`); // Debug log
+      const spaceBookings = bookings.filter(booking => {
+        console.log(`Checking booking for parking space ${parkingSpace._id}:`);
+        console.log(`Booking Start Time: ${booking.startTime}, End Time: ${booking.endTime}`); // Debug log
 
-    const isCurrentBooking = 
-        booking.parkingSpace.id === parkingSpace._id.toString() &&
-        booking.startTime <= currentTime &&
-        booking.endTime > currentTime;
+        const isCurrentBooking = 
+            booking.parkingSpace.id === parkingSpace._id.toString() &&
+            booking.startTime <= currentTime &&
+            booking.endTime > currentTime;
 
-    return isCurrentBooking;
-});
+        return isCurrentBooking;
+      });
 
-    console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
+      console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
 
       const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
         // Count only currently active bookings for this vehicle type
@@ -216,6 +215,19 @@ const spaceBookings = bookings.filter(booking => {
 
     if (expiredBookings.modifiedCount > 0) {
       console.log(`Updated ${expiredBookings.modifiedCount} expired bookings to completed status`);
+
+      // Now free up the slots for these bookings
+      expiredBookings.forEach(booking => {
+        const parkingSpace = parkingSpaces.find(space => space._id.toString() === booking.parkingSpace.id);
+        if (parkingSpace) {
+          parkingSpace.vehicleSlots.forEach(slot => {
+            if (slot.vehicleType.toLowerCase() === booking.vehicleType.toLowerCase()) {
+              slot.availableSlots += 1; // Free up one slot
+              console.log(`Freed up a slot for vehicle type ${slot.vehicleType} in parking space ${parkingSpace.name}`);
+            }
+          });
+        }
+      });
     }
 
     return res.json(formattedParkingSpaces);
@@ -227,7 +239,6 @@ const spaceBookings = bookings.filter(booking => {
     });
   }
 });
-
 // Add this after your MongoDB connection
 mongoose.connection.once('open', async () => {
   try {
