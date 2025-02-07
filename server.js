@@ -89,11 +89,11 @@ app.get('/parking', async (req, res) => {
     const queryDate = new Date(date).toISOString().split('T')[0];
     
     // Get current time in HH:mm format
-    const currentTime = new Date().toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit'
-    });
+const currentTime = new Date().toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit'
+});
 
     // Get all bookings for the given date that are still active (not expired)
     const bookings = await Payment.find({
@@ -206,13 +206,13 @@ app.get('/parking', async (req, res) => {
     }
 
     return res.json(formattedParkingSpaces);
-  } catch (error) {
-    console.error('Error fetching parking spaces:', error);
+} catch (error) {
+    console.error('Error fetching parking spaces:', error); // Log full error object
     return res.status(500).json({
-      message: 'Error fetching parking spaces. Please try again later.',
-      error: error.message
+        message: 'Error fetching parking spaces. Please try again later.',
+        error: error // Include the full error object in the response for debugging
     });
-  }
+}
 });
 
 // Add this after your MongoDB connection
