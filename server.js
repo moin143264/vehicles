@@ -22,15 +22,15 @@ const Payment=require('./models/Payment')
 // Middleware
 app.use(cors());
 app.use(express.json());
-console.log('Environment Variables:', {
-    DB_URI: process.env.DB_URI || 'not provided',
-    // Add other environment variables as needed
-});
 
-// Database connection check
-mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Database connection successful'))
-    .catch(err => console.error('Database connection error:', err));
+// MongoDB connection
+mongoose.connect(process.env.DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch((error) => console.error('MongoDB connection error:', error));
+
 // Routes
 app.use('/users', userRoutes);
 app.use('/api', userRoutes);
@@ -83,7 +83,7 @@ app.get('/parking', async (req, res) => {
 
   try {
     const parkingSpaces = await ParkingSpace.find();
-    console.log(`Total parking spaces in database: ${parkingSpaces.length}`);
+    console.log(`Total parking spaces in database: ${parkingSpaces}`);
     
     // Format the query date to match booking date format (YYYY-MM-DD)
     const queryDate = new Date(date).toISOString().split('T')[0];
@@ -105,6 +105,20 @@ app.get('/parking', async (req, res) => {
 
     console.log('Found active bookings:', bookings); // Debug log
     
+    // Debug each parking space distance
+    parkingSpaces.forEach(space => {
+      const distance = getDistance(
+        parseFloat(latitude),
+        parseFloat(longitude),
+        space.latitude,
+        space.longitude
+      );
+      console.log(`\nParking Space: ${space.name}`);
+      console.log(`Location: ${space.latitude}, ${space.longitude}`);
+      console.log(`Distance from user: ${distance.toFixed(2)}km`);
+      console.log(`Within 10km range: ${distance <= 10 ? 'YES' : 'NO'}`);
+    });
+
     const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
       const distance = getDistance(
         parseFloat(latitude),
@@ -118,9 +132,11 @@ app.get('/parking', async (req, res) => {
     const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
       // Find current active bookings for this specific parking space
       const spaceBookings = bookings.filter(booking => {
-        return booking.parkingSpace.id === parkingSpace._id.toString() &&
-               booking.startTime <= currentTime &&
-               booking.endTime > currentTime;
+        const isCurrentBooking = 
+          booking.parkingSpace.id === parkingSpace._id.toString() &&
+          booking.startTime <= currentTime &&
+          booking.endTime > currentTime;
+        return isCurrentBooking;
       });
 
       console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
@@ -133,15 +149,20 @@ app.get('/parking', async (req, res) => {
 
         console.log(`Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`); // Debug log
 
+        // Get upcoming bookings for this slot type
+        const upcomingBookings = bookings.filter(booking => 
+          booking.parkingSpace.id === parkingSpace._id.toString() &&
+          booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase() &&
+          booking.startTime > currentTime
+        );
+
         return {
           vehicleType: slot.vehicleType,
           availableSlots: Math.max(0, slot.totalSlots - bookedSlotsCount),
           totalSlots: slot.totalSlots,
           pricePerHour: slot.pricePerHour,
           dimensions: slot.dimensions,
-          upcomingBookings: spaceBookings.filter(booking => 
-            booking.startTime > currentTime
-          ).map(booking => ({
+          upcomingBookings: upcomingBookings.map(booking => ({
             startTime: booking.startTime,
             endTime: booking.endTime
           }))
@@ -167,6 +188,22 @@ app.get('/parking', async (req, res) => {
         totalCapacity: parkingSpace.totalCapacity
       };
     });
+
+    // Add a scheduled task to automatically update booking status
+    const expiredBookings = await Payment.updateMany(
+      {
+        bookingDate: queryDate,
+        bookingStatus: 'confirmed',
+        endTime: { $lte: currentTime }
+      },
+      {
+        $set: { bookingStatus: 'completed' }
+      }
+    );
+
+    if (expiredBookings.modifiedCount > 0) {
+      console.log(`Updated ${expiredBookings.modifiedCount} expired bookings to completed status`);
+    }
 
     return res.json(formattedParkingSpaces);
   } catch (error) {
