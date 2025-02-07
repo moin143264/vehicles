@@ -139,35 +139,37 @@ const currentTime = new Date().toLocaleTimeString('en-US', {
         return isCurrentBooking;
       });
 
-      console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
+console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
 
-      const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
-        // Count only currently active bookings for this vehicle type
-        const bookedSlotsCount = spaceBookings.filter(
-          booking => booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase()
-        ).length;
+const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
+    // Count only currently active bookings for this vehicle type
+    const bookedSlotsCount = spaceBookings.filter(
+        booking => booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase()
+    ).length;
 
-        console.log(`Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`); // Debug log
+    console.log(`Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`); // Debug log
 
-        // Get upcoming bookings for this slot type
-        const upcomingBookings = bookings.filter(booking => 
-          booking.parkingSpace.id === parkingSpace._id.toString() &&
-          booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase() &&
-          booking.startTime > currentTime
-        );
+    // Ensure to log upcoming bookings as well
+    const upcomingBookings = bookings.filter(booking => 
+        booking.parkingSpace.id === parkingSpace._id.toString() &&
+        booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase() &&
+        booking.startTime > currentTime
+    );
 
-        return {
-          vehicleType: slot.vehicleType,
-          availableSlots: Math.max(0, slot.totalSlots - bookedSlotsCount),
-          totalSlots: slot.totalSlots,
-          pricePerHour: slot.pricePerHour,
-          dimensions: slot.dimensions,
-          upcomingBookings: upcomingBookings.map(booking => ({
+    console.log(`Upcoming bookings for vehicle type ${slot.vehicleType}:`, upcomingBookings); // Debug log
+
+    return {
+        vehicleType: slot.vehicleType,
+        availableSlots: Math.max(0, slot.totalSlots - bookedSlotsCount),
+        totalSlots: slot.totalSlots,
+        pricePerHour: slot.pricePerHour,
+        dimensions: slot.dimensions,
+        upcomingBookings: upcomingBookings.map(booking => ({
             startTime: booking.startTime,
             endTime: booking.endTime
-          }))
-        };
-      });
+        }))
+    };
+});
 
       const totalAvailableSlots = updatedVehicleSlots.reduce(
         (sum, slot) => sum + slot.availableSlots,
