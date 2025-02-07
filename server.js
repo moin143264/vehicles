@@ -145,7 +145,78 @@ const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
     });
 
     console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
-    // ... rest of the code
+      const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
+        // Count only currently active bookings for this vehicle type
+        const bookedSlotsCount = spaceBookings.filter(
+          booking => booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase()
+        ).length;
+
+        console.log(`Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`); // Debug log
+
+        // Get upcoming bookings for this slot type
+        const upcomingBookings = bookings.filter(booking => 
+          booking.parkingSpace.id === parkingSpace._id.toString() &&
+          booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase() &&
+          booking.startTime > currentTime
+        );
+
+        return {
+          vehicleType: slot.vehicleType,
+          availableSlots: Math.max(0, slot.totalSlots - bookedSlotsCount),
+          totalSlots: slot.totalSlots,
+          pricePerHour: slot.pricePerHour,
+          dimensions: slot.dimensions,
+          upcomingBookings: upcomingBookings.map(booking => ({
+            startTime: booking.startTime,
+            endTime: booking.endTime
+          }))
+        };
+      });
+
+      const totalAvailableSlots = updatedVehicleSlots.reduce(
+        (sum, slot) => sum + slot.availableSlots,
+        0
+      );
+
+      return {
+        id: parkingSpace._id,
+        name: parkingSpace.name,
+        address: parkingSpace.address,
+        type: parkingSpace.type,
+        latitude: parkingSpace.latitude,
+        longitude: parkingSpace.longitude,
+        facilities: parkingSpace.facilities,
+        isOpen: parkingSpace.isOpen,
+        vehicleSlots: updatedVehicleSlots,
+        totalAvailableSlots: totalAvailableSlots,
+        totalCapacity: parkingSpace.totalCapacity
+      };
+    });
+
+    // Add a scheduled task to automatically update booking status
+    const expiredBookings = await Payment.updateMany(
+      {
+        bookingDate: queryDate,
+        bookingStatus: 'confirmed',
+        endTime: { $lte: currentTime }
+      },
+      {
+        $set: { bookingStatus: 'completed' }
+      }
+    );
+
+    if (expiredBookings.modifiedCount > 0) {
+      console.log(`Updated ${expiredBookings.modifiedCount} expired bookings to completed status`);
+    }
+
+    return res.json(formattedParkingSpaces);
+  } catch (error) {
+    console.error('Error fetching parking spaces:', error);
+    return res.status(500).json({
+      message: 'Error fetching parking spaces. Please try again later.',
+      error: error.message
+    });
+  }
 });
 
 
