@@ -136,13 +136,20 @@ console.log('Nearby parking spaces:', nearbyParkingSpaces); // Debug log
 
 const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
     // Find current active bookings for this specific parking space
-    const spaceBookings = bookings.filter(booking => {
-        const isCurrentBooking = 
-            booking.parkingSpace.id === parkingSpace._id.toString() &&
-            booking.startTime <= currentTime &&
-            booking.endTime > currentTime;
-        return isCurrentBooking;
-    });
+// Log current time for debugging
+console.log('Current Time:', currentTime); // Debug log
+
+const spaceBookings = bookings.filter(booking => {
+    console.log(`Checking booking for parking space ${parkingSpace._id}:`);
+    console.log(`Booking Start Time: ${booking.startTime}, End Time: ${booking.endTime}`); // Debug log
+
+    const isCurrentBooking = 
+        booking.parkingSpace.id === parkingSpace._id.toString() &&
+        booking.startTime <= currentTime &&
+        booking.endTime > currentTime;
+
+    return isCurrentBooking;
+});
 
     console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
 
