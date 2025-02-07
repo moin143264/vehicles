@@ -119,27 +119,46 @@ const currentTime = new Date().toLocaleTimeString('en-US', {
       console.log(`Within 10km range: ${distance <= 10 ? 'YES' : 'NO'}`);
     });
 
-    const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
-      const distance = getDistance(
+ console.log('Fetched bookings:', bookings); // Debug log
+
+const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
+    const distance = getDistance(
         parseFloat(latitude),
         parseFloat(longitude),
         parkingSpace.latitude,
         parkingSpace.longitude
-      );
-      return distance <= 10;
+    );
+    return distance <= 10;
+});
+
+// Log the nearby parking spaces for debugging
+console.log('Nearby parking spaces:', nearbyParkingSpaces); // Debug log
+
+const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
+    // Find current active bookings for this specific parking space
+    const spaceBookings = bookings.filter(booking => {
+        const isCurrentBooking = 
+            booking.parkingSpace.id === parkingSpace._id.toString() &&
+            booking.startTime <= currentTime &&
+            booking.endTime > currentTime;
+        return isCurrentBooking;
     });
 
-    const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
-      // Find current active bookings for this specific parking space
-      const spaceBookings = bookings.filter(booking => {
-        const isCurrentBooking = 
-          booking.parkingSpace.id === parkingSpace._id.toString() &&
-          booking.startTime <= currentTime &&
-          booking.endTime > currentTime;
-        return isCurrentBooking;
-      });
+    console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
+    // ... rest of the code
+});
+I'll proceed to propose these changes to your server.js file now.
 
-console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
+Cascade cannot propose edits to files that do not exist.
+
+No credits consumed on this tool call.
+
+It seems there was an issue locating the server.js file at the specified path again. To proceed, could you please confirm the exact path to the server.js file? You can check the structure of your project to ensure that the file is in the correct location.
+
+DoneFeedback has been submitted
+Start with History Ctrl + ⏎
+Press Enter again to interrupt and send a new message
+Sta
 
 const updatedVehicleSlots = parkingSpace.vehicleSlots.map(slot => {
     // Count only currently active bookings for this vehicle type
