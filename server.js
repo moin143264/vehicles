@@ -83,7 +83,7 @@ app.get('/parking', async (req, res) => {
 
   try {
     const parkingSpaces = await ParkingSpace.find();
-    console.log(`Total parking spaces in database: ${parkingSpaces}`);
+    console.log(`Total parking spaces in database: ${parkingSpaces.length}`);
     
     // Format the query date to match booking date format (YYYY-MM-DD)
     const queryDate = new Date(date).toISOString().split('T')[0];
@@ -105,20 +105,6 @@ app.get('/parking', async (req, res) => {
 
     console.log('Found active bookings:', bookings); // Debug log
     
-    // Debug each parking space distance
-    parkingSpaces.forEach(space => {
-      const distance = getDistance(
-        parseFloat(latitude),
-        parseFloat(longitude),
-        space.latitude,
-        space.longitude
-      );
-      console.log(`\nParking Space: ${space.name}`);
-      console.log(`Location: ${space.latitude}, ${space.longitude}`);
-      console.log(`Distance from user: ${distance.toFixed(2)}km`);
-      console.log(`Within 10km range: ${distance <= 10 ? 'YES' : 'NO'}`);
-    });
-
     const nearbyParkingSpaces = parkingSpaces.filter((parkingSpace) => {
       const distance = getDistance(
         parseFloat(latitude),
@@ -132,11 +118,9 @@ app.get('/parking', async (req, res) => {
     const formattedParkingSpaces = nearbyParkingSpaces.map((parkingSpace) => {
       // Find current active bookings for this specific parking space
       const spaceBookings = bookings.filter(booking => {
-        const isCurrentBooking = 
-          booking.parkingSpace.id === parkingSpace._id.toString() &&
-          booking.startTime <= currentTime &&
-          booking.endTime > currentTime;
-        return isCurrentBooking;
+        return booking.parkingSpace.id === parkingSpace._id.toString() &&
+               booking.startTime <= currentTime &&
+               booking.endTime > currentTime;
       });
 
       console.log(`Active bookings for space ${parkingSpace._id}:`, spaceBookings); // Debug log
@@ -149,20 +133,15 @@ app.get('/parking', async (req, res) => {
 
         console.log(`Vehicle type ${slot.vehicleType} - Currently booked slots: ${bookedSlotsCount}`); // Debug log
 
-        // Get upcoming bookings for this slot type
-        const upcomingBookings = bookings.filter(booking => 
-          booking.parkingSpace.id === parkingSpace._id.toString() &&
-          booking.vehicleType.toLowerCase() === slot.vehicleType.toLowerCase() &&
-          booking.startTime > currentTime
-        );
-
         return {
           vehicleType: slot.vehicleType,
           availableSlots: Math.max(0, slot.totalSlots - bookedSlotsCount),
           totalSlots: slot.totalSlots,
           pricePerHour: slot.pricePerHour,
           dimensions: slot.dimensions,
-          upcomingBookings: upcomingBookings.map(booking => ({
+          upcomingBookings: spaceBookings.filter(booking => 
+            booking.startTime > currentTime
+          ).map(booking => ({
             startTime: booking.startTime,
             endTime: booking.endTime
           }))
@@ -188,22 +167,6 @@ app.get('/parking', async (req, res) => {
         totalCapacity: parkingSpace.totalCapacity
       };
     });
-
-    // Add a scheduled task to automatically update booking status
-    const expiredBookings = await Payment.updateMany(
-      {
-        bookingDate: queryDate,
-        bookingStatus: 'confirmed',
-        endTime: { $lte: currentTime }
-      },
-      {
-        $set: { bookingStatus: 'completed' }
-      }
-    );
-
-    if (expiredBookings.modifiedCount > 0) {
-      console.log(`Updated ${expiredBookings.modifiedCount} expired bookings to completed status`);
-    }
 
     return res.json(formattedParkingSpaces);
   } catch (error) {
