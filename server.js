@@ -92,7 +92,8 @@ app.get('/parking', async (req, res) => {
     const currentTime = new Date().toLocaleTimeString('en-US', { 
       hour12: false, 
       hour: '2-digit', 
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata' // Change to your local timezone if needed
     });
 
     // Get all bookings for the given date that are still active (not expired)
