@@ -22,15 +22,15 @@ const Payment=require('./models/Payment')
 // Middleware
 app.use(cors());
 app.use(express.json());
+console.log('Environment Variables:', {
+    DB_CONNECTION: process.env.DB_CONNECTION || 'not provided',
+    // Add other environment variables as needed
+});
 
-// MongoDB connection
-mongoose.connect(process.env.DB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch((error) => console.error('MongoDB connection error:', error));
-
+// Database connection check
+mongoose.connect(process.env.DB_CONNECTION, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Database connection successful'))
+    .catch(err => console.error('Database connection error:', err));
 // Routes
 app.use('/users', userRoutes);
 app.use('/api', userRoutes);
