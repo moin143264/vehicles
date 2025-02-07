@@ -23,12 +23,12 @@ const Payment=require('./models/Payment')
 app.use(cors());
 app.use(express.json());
 console.log('Environment Variables:', {
-    DB_CONNECTION: process.env.DB_CONNECTION || 'not provided',
+    DB_URI: process.env.DB_URI || 'not provided',
     // Add other environment variables as needed
 });
 
 // Database connection check
-mongoose.connect(process.env.DB_CONNECTION, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Database connection successful'))
     .catch(err => console.error('Database connection error:', err));
 // Routes
