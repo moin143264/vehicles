@@ -44,26 +44,44 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
+
+// Middleware to authenticate tokens
+const authenticateToken = (req, res, next) => {
+  const token = req.body.token; // Assuming the token is sent in the body
+  if (!token) return res.sendStatus(401); // Unauthorized
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403); // Forbidden
+    req.user = user; // Store user info in the request for later use
+    next();
+  });
+};
+
+// Endpoint to renew the token
 app.post('/renew-token', authenticateToken, (req, res) => {
   const user = req.user; // Get user info from the authenticated token
 
   // Create a new token with the same user info
-  const newToken = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, {
+  const newToken = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
     expiresIn: TOKEN_EXPIRATION_TIME,
   });
 
   res.json({ token: newToken }); // Send the new token back to the client
 });
+
+// Endpoint to validate the token
 app.post('/validate-token', (req, res) => {
   const { token } = req.body;
-  jwt.verify(token, process.env.JWT_SECRET, (err) => {
+  jwt.verify(token, JWT_SECRET, (err) => {
     if (err) {
       return res.status(403).json({ isValid: false });
     }
     res.json({ isValid: true });
   });
 });
+
 // API endpoint to fetch user profile data
 app.get('/user-profile', authenticateToken, async (req, res) => {
   console.log('Route /user-profile accessed');  
