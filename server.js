@@ -44,6 +44,17 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
+const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
+app.post('/renew-token', authenticateToken, (req, res) => {
+  const user = req.user; // Get user info from the authenticated token
+
+  // Create a new token with the same user info
+  const newToken = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, {
+    expiresIn: TOKEN_EXPIRATION_TIME,
+  });
+
+  res.json({ token: newToken }); // Send the new token back to the client
+});
 // API endpoint to fetch user profile data
 app.get('/user-profile', authenticateToken, async (req, res) => {
   console.log('Route /user-profile accessed');  
