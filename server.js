@@ -55,6 +55,15 @@ app.post('/renew-token', authenticateToken, (req, res) => {
 
   res.json({ token: newToken }); // Send the new token back to the client
 });
+app.post('/validate-token', (req, res) => {
+  const { token } = req.body;
+  jwt.verify(token, process.env.JWT_SECRET, (err) => {
+    if (err) {
+      return res.status(403).json({ isValid: false });
+    }
+    res.json({ isValid: true });
+  });
+});
 // API endpoint to fetch user profile data
 app.get('/user-profile', authenticateToken, async (req, res) => {
   console.log('Route /user-profile accessed');  
