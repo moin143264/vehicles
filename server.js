@@ -47,18 +47,6 @@ app.use((err, req, res, next) => {
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
 
-// Middleware to authenticate tokens
-const authenticateToken = (req, res, next) => {
-  const token = req.body.token; // Assuming the token is sent in the body
-  if (!token) return res.sendStatus(401); // Unauthorized
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403); // Forbidden
-    req.user = user; // Store user info in the request for later use
-    next();
-  });
-};
-
 // Endpoint to renew the token
 app.post('/renew-token', authenticateToken, (req, res) => {
   const user = req.user; // Get user info from the authenticated token
