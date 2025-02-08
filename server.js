@@ -45,7 +45,7 @@ app.use((err, req, res, next) => {
   });
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const TOKEN_EXPIRATION_TIME = '1m'; // Set your token expiration time
+const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
 
 // Endpoint to renew the token
 app.post('/renew-token', authenticateToken, (req, res) => {
