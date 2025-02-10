@@ -49,23 +49,18 @@ const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
 
 // Endpoint to renew the token
 // Function to renew the token
-export const renewToken = async (token) => {
-  try {
-    const response = await axios.post(
-      "https://vehicleparking.up.railway.app/renew-token",
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Send the token in the Authorization header
-        },
-      }
-    );
-    return response.data.token; // Assuming the new token is returned in this format
-  } catch (error) {
-    console.error("Error renewing token:", error);
-    return null;
-  }
-};
+app.post('/renew-token', authenticateToken, (req, res) => {
+  const user = req.user; // Get user info from the authenticated token
+
+  // Create a new token with the same user info
+  const newToken = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
+    expiresIn: TOKEN_EXPIRATION_TIME,
+  });
+
+  res.json({ token: newToken }); // Send the new token back to the client
+});
+
+
 // Endpoint to validate the token
 app.post('/validate-token', (req, res) => {
   const { token } = req.body;
