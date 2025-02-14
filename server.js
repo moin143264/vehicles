@@ -44,32 +44,102 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
+const sendBookingNotifications = async () => {
+  try {
+    const bookings = await Payment.find({ status: { $in: ['pending', 'confirmed'] } });
+
+    for (const booking of bookings) {
+      const user = await User.findById(booking.userId); // Get the user associated with the booking
+      if (!user || !user.pushToken || !user.timezone) continue; // Skip if user, push token, or timezone is not found
+
+      // Get the current time in the user's local timezone
+      const now = moment.tz(user.timezone); // Use moment-timezone to get local time
+
+      const startTime = moment.tz(booking.startTime, user.timezone); // Convert start time to user's local time
+      const endTime = moment.tz(booking.endTime, user.timezone); // Convert end time to user's local time
+
+      // Check if the booking is upcoming (within 10 minutes)
+      if (startTime.diff(now, 'minutes') <= 10 && booking.status === 'pending') {
+        await sendNotification(
+          user.pushToken,
+          'Upcoming Booking',
+          `Your booking at ${booking.stationName} starts in less than 10 minutes!`,
+          { bookingId: booking._id }
+        );
+      }
+      // Check if the booking has expired
+      else if (endTime.diff(now, 'minutes') <= 0 && booking.status !== 'expired') {
+        await Payment.findByIdAndUpdate(booking._id, { status: 'expired' }); // Update booking status
+        await sendNotification(
+          user.pushToken,
+          'Booking Expired',
+          `Your booking at ${booking.stationName} has ended. Thank you for using our service!`,
+          { bookingId: booking._id }
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Error sending booking notifications:', error);
+  }
+};
+cron.schedule('*/5 * * * *', sendBookingNotifications);
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const TOKEN_EXPIRATION_TIME = '1h'; // Set your token expiration time
+const TOKEN_EXPIRATION_TIME = '7d'; // Increase to 7 days for better user experience
 
-// Endpoint to renew the token
-// Function to renew the token
-app.post('/renew-token', authenticateToken, (req, res) => {
-  const user = req.user; // Get user info from the authenticated token
+app.post("/renew-token", async (req, res) => {
+  // Remove authenticateToken middleware since the token is expired
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  // Create a new token with the same user info
-  const newToken = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-    expiresIn: TOKEN_EXPIRATION_TIME,
-  });
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
-  res.json({ token: newToken }); // Send the new token back to the client
+  try {
+    // Verify the token but ignore expiration
+    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true });
+    
+    // Create new token with the same user info
+    const newToken = jwt.sign(
+      { id: decoded.id, email: decoded.email },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRATION_TIME }
+    );
+
+    res.json({ token: newToken });
+  } catch (error) {
+    console.error("Token renewal error:", error);
+    res.status(403).json({ error: error.message });
+  }
 });
 
-
 // Endpoint to validate the token
-app.post('/validate-token', (req, res) => {
+app.post("/validate-token", (req, res) => {
   const { token } = req.body;
-  jwt.verify(token, JWT_SECRET, (err) => {
-    if (err) {
-      return res.status(403).json({ isValid: false });
-    }
+  
+  if (!token) {
+    return res.status(400).json({ 
+      isValid: false, 
+      error: 'Token is required' 
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ isValid: true });
-  });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(403).json({ 
+        isValid: false, 
+        error: 'Token expired',
+        expired: true  // Add flag to indicate expiration
+      });
+    }
+    res.status(403).json({ 
+      isValid: false, 
+      error: error.message 
+    });
+  }
 });
 
 // API endpoint to fetch user profile data
