@@ -764,6 +764,7 @@ app.post("/api/send-email", async (req, res) => {
     });
   }
 });
+   app.post('/api/push-token', (req, res) => {
     const { token } = req.body;
 
     if (!token) {
@@ -776,6 +777,7 @@ app.post("/api/send-email", async (req, res) => {
     // Respond with success
     res.status(200).json({ message: 'Token received successfully' });
 });
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
