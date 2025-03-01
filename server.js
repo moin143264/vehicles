@@ -764,6 +764,18 @@ app.post("/api/send-email", async (req, res) => {
     });
   }
 });
+    const { token } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // Here you can save the token to your database or perform any other logic
+    console.log('Received push token:', token);
+
+    // Respond with success
+    res.status(200).json({ message: 'Token received successfully' });
+});
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
