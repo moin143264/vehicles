@@ -276,7 +276,7 @@ router.post('/forgot', async (req, res) => {
 
     // Send OTP to the user's email
     await transporter.sendMail({
-        from: `"EV Charging Office" <${process.env.EMAIL_USER}>`,
+        from: `"ParkMatser-Pro" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'Your OTP for Password Reset',
         html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
