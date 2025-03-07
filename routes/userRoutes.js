@@ -267,5 +267,75 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+router.post('/forgot', async (req, res) => {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).send('User not found');
 
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+
+    // Send OTP to the user's email
+    await transporter.sendMail({
+        from: `"EV Charging Office" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Your OTP for Password Reset',
+        html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
+    });
+
+    // Set OTP expiration time in Asia/Kolkata timezone
+    const expiresAt = moment.tz('Asia/Kolkata').add(5, 'minutes').valueOf(); // Current time in Asia/Kolkata + 5 minutes
+    otpStore.set(email, { otp, expiresAt });
+
+    console.log("Generated OTP:", otp);
+    console.log("OTP expires at (Asia/Kolkata):", moment.tz(expiresAt, 'Asia/Kolkata').format("YYYY-MM-DD HH:mm:ss")); // Log in Asia/Kolkata time only
+
+    res.send('OTP sent to your email');
+});
+
+// Verify the OTP
+router.post('/verify-otpp', async (req, res) => {
+    const { email, otp } = req.body;
+
+    const storedOtpData = otpStore.get(email);
+    if (!storedOtpData) {
+        console.log("OTP not found in store for email:", email);
+        return res.status(400).json({ error: "OTP not found or expired" });
+    }
+
+    console.log("Stored OTP Data:", storedOtpData); // Log stored OTP data
+    console.log("Provided OTP:", otp);
+    const currentTime = moment.tz('Asia/Kolkata').valueOf(); // Get current time in Asia/Kolkata
+    console.log("Current time (Asia/Kolkata):", moment.tz(currentTime, 'Asia/Kolkata').format("YYYY-MM-DD HH:mm:ss"));
+    console.log("OTP expires at (Asia/Kolkata):", moment.tz(storedOtpData.expiresAt, 'Asia/Kolkata').format("YYYY-MM-DD HH:mm:ss"));
+
+    if (storedOtpData.otp !== otp) {
+        console.log("OTP mismatch for email:", email);
+        otpStore.delete(email); // Remove expired OTP
+        return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    if (storedOtpData.expiresAt < currentTime) {
+        otpStore.delete(email); // Remove expired OTP
+        console.log("OTP expired for email:", email);
+        return res.status(400).json({ error: "OTP expired" });
+    }
+
+    otpStore.delete(email); // Optionally remove OTP after successful verification
+    res.json({ message: "OTP verified successfully" });
+});
+// Reset Password
+router.post('/reset', async (req, res) => {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).send('User not found');
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.findByIdAndUpdate(user._id, { password: hashedPassword });
+        res.send('Password has been updated');
+    } catch (error) {
+        res.status(500).send('Error updating password');
+    }
+});
 module.exports = router;
