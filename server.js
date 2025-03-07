@@ -777,6 +777,30 @@ app.post("/api/send-email", async (req, res) => {
     // Respond with success
     res.status(200).json({ message: 'Token received successfully' });
 });
+app.post('/send-notification', async (req, res) => {
+  const { token, title, body } = req.body;
+
+  const message = {
+    to: token,
+    sound: 'default',
+    title: title,
+    body: body,
+  };
+
+  try {
+    const response = await axios.post('https://exp.host/--/api/v2/push/send', message);
+    
+    if (response.data && response.data.errors) {
+      console.error('Push notification errors:', response.data.errors);
+      return res.status(400).send({ success: false, message: 'Failed to send notification', errors: response.data.errors });
+    }
+
+    return res.status(200).send({ success: true, message: 'Notification sent successfully' });
+  } catch (error) {
+    console.error('Error sending notification:', error.response ? error.response.data : error.message);
+    return res.status(500).send({ success: false, message: 'Error sending notification', error: error.message });
+  }
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
