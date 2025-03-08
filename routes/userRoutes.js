@@ -267,6 +267,7 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+//forgot
 router.post('/forgot', async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -276,7 +277,7 @@ router.post('/forgot', async (req, res) => {
 
     // Send OTP to the user's email
     await transporter.sendMail({
-        from: `"ParkMatser-Pro" <${process.env.EMAIL_USER}>`,
+        from: `"PARKMASTER PRO" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'Your OTP for Password Reset',
         html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
