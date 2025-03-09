@@ -268,7 +268,7 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
   }
 });
 //forgot
-router.post('/api/forgot', async (req, res) => {
+router.post('/forgot', async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).send('User not found');
@@ -294,7 +294,7 @@ router.post('/api/forgot', async (req, res) => {
 });
 
 // Verify the OTP
-router.post('/api/verify-otpp', async (req, res) => {
+router.post('/verify-otpp', async (req, res) => {
     const { email, otp } = req.body;
 
     const storedOtpData = otpStore.get(email);
@@ -325,7 +325,7 @@ router.post('/api/verify-otpp', async (req, res) => {
     res.json({ message: "OTP verified successfully" });
 });
 // Reset Password
-router.post('/api/reset', async (req, res) => {
+router.post('/reset', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
