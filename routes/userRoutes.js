@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User"); // Your User model
 const router = express.Router();
 const nodemailer = require("nodemailer");
-
+const moment = require('moment-timezone');
 // Helper function to generate JWT token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1h" });
