@@ -45,6 +45,12 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS, // Use your app password here
   },
 });
+app.get("/", (req, res) => {
+  res.status(200).send({
+    success: true,
+    msg: "running",
+  });
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
