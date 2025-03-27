@@ -43,9 +43,14 @@ router.patch('/:id', async (req, res) => {
     }
 
     // Find the vehicle slot
-    const vehicleSlot = parkingSpace.vehicleSlots.find(slot => slot.vehicleType === vehicleType);
+    const vehicleSlot = parkingSpace.vehicleSlots.find(
+      slot => slot.vehicleType === vehicleType
+    );
     if (!vehicleSlot) {
-      return res.status(404).json({ error: 'Vehicle type not found in parking space' });
+      return res.status(404).json({ 
+        error: 'Vehicle type not found in parking space',
+        availableSlots: parkingSpace.vehicleSlots
+      });
     }
 
     // Update the slot count
@@ -53,17 +58,31 @@ router.patch('/:id', async (req, res) => {
       if (vehicleSlot.availableSlots > 0) {
         vehicleSlot.availableSlots -= 1;
       } else {
-        return res.status(400).json({ error: 'No available slots for this vehicle type' });
+        return res.status(400).json({ 
+          error: 'No available slots for this vehicle type',
+          availableSlots: parkingSpace.vehicleSlots
+        });
       }
     }
 
     // Save the updated parking space
     await parkingSpace.save();
 
-    res.json(parkingSpace);
+    res.json({
+      success: true,
+      parkingSpace: {
+        id: parkingSpace.id,
+        name: parkingSpace.name,
+        address: parkingSpace.address,
+        vehicleSlots: parkingSpace.vehicleSlots
+      }
+    });
   } catch (error) {
     console.error('Error updating parking space:', error);
-    res.status(500).json({ error: 'Failed to update parking space' });
+    res.status(500).json({ 
+      error: 'Failed to update parking space',
+      details: error.message
+    });
   }
 });
 module.exports = router;
